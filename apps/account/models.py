@@ -6,40 +6,38 @@ from django.contrib.auth.models import (
     BaseUserManager,
 )
 from apps.models import TimestampedModel
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 
 
 class UserAccountManager(BaseUserManager):
 
-    RESTRICTED_USERNAMES = ["admin", "undefined", "null", "superuser", "root", "system"]
-
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, email, username, password=None, **extra_fields):
+        """
+        Check if everything is ok with the user data and create a user
+        """
+        save_model = extra_fields.pop("save_model", True)
+        # Check if the email and username are provided
         if not email:
             raise ValueError("Users must have an email address")
-
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-
+        email = self.normalize_email(email.lower())
+        if not username:
+            raise ValueError("Users must have a username")
+        username = username.lower()
+        user = self.model(email=email, username=username, **extra_fields)
+        # Set the password
         user.set_password(password)
 
+        # Set the first and last name if provided
         first_name = extra_fields.get("first_name", None)
         last_name = extra_fields.get("last_name", None)
-
-        if not first_name or not last_name:
-            raise ValueError("Users must have a first name and last name")
-
         user.first_name = first_name
         user.last_name = last_name
 
-        username = extra_fields.get("username", None)
-
-        if username and username.lower() in self.RESTRICTED_USERNAMES:
-            raise ValueError(f"The username {username} is not allowed")
-
-        user.username = username
-
-        user.save(using=self._db)
+        # Save the user if save_model is True
+        if save_model:
+            user.save()
 
         return user
 
@@ -56,6 +54,9 @@ class UserAccountManager(BaseUserManager):
 
 
 class UserAccount(AbstractBaseUser, TimestampedModel, PermissionsMixin):
+    """
+    Entity that can access the system
+    """
 
     id = models.UUIDField(
         default=uuid.uuid4,
@@ -74,10 +75,14 @@ class UserAccount(AbstractBaseUser, TimestampedModel, PermissionsMixin):
 
     first_name = models.CharField(
         max_length=100,
+        blank=True,
+        null=True,
     )
 
     last_name = models.CharField(
         max_length=100,
+        blank=True,
+        null=True,
     )
 
     is_staff = models.BooleanField(
@@ -92,6 +97,10 @@ class UserAccount(AbstractBaseUser, TimestampedModel, PermissionsMixin):
     REQUIRED_FIELDS = ["username", "first_name", "last_name"]
 
     objects = UserAccountManager()
+
+    class Meta:
+        verbose_name = "User Account"
+        verbose_name_plural = "User Accounts"
 
     def __str__(self):
         return self.email
