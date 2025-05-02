@@ -68,10 +68,12 @@ class UserCreateView(APIView):
                 )
             # We use the detail serializer to return the user data
             data = UserDetailView.OutputSerializer(
-                email=user.email,
-                username=user.username,
-                first_name=user.first_name,
-                last_name=user.last_name,
+                {
+                    "email": user.email,
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                }
             ).data
 
             return Response(data, status=201)
