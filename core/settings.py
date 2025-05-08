@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     # internal apps
     "apps.account",
+    "apps.doctor",
     "apps.appointment",
 ]
 

@@ -55,10 +55,8 @@ class UserCreateView(APIView):
             return value
 
     def post(self, request, *args, **kwargs):
-        # Get the data from the request
-        data = request.data
         # Create the user account
-        serializer = self.InputSerializer(data=data)
+        serializer = self.InputSerializer(data=request.data)
         if serializer.is_valid():
             try:
                 user = user_create(**serializer.validated_data)
@@ -87,6 +85,7 @@ class UserDetailView(APIView):
     """
 
     class OutputSerializer(serializers.Serializer):
+        id = serializers.UUIDField()
         email = serializers.EmailField()
         username = serializers.CharField(max_length=150)
         first_name = serializers.CharField(max_length=30)

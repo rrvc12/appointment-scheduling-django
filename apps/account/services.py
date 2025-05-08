@@ -14,8 +14,6 @@ def user_create(
     """
     Create a user account.
     """
-    from apps.account.models import UserAccount
-
     user = UserAccount.objects.create_user(
         email=email,
         username=username,
