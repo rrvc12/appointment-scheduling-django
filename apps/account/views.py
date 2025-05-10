@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from apps.account.services import user_create
-from apps.account.selectors import get_user_by_username
+from apps.account.selectors import get_useraccount
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -65,16 +65,9 @@ class UserCreateView(APIView):
                     {"detail": "User creation failed.", "error": str(e)}, status=400
                 )
             # We use the detail serializer to return the user data
-            data = UserDetailView.OutputSerializer(
-                {
-                    "email": user.email,
-                    "username": user.username,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                }
-            ).data
+            serializer = UserDetailView.OutputSerializer(user)
 
-            return Response(data, status=201)
+            return Response(serializer.data, status=201)
 
         return Response(serializer.errors, status=400)
 
@@ -93,7 +86,7 @@ class UserDetailView(APIView):
 
     def get(self, request, username, *args, **kwargs):
         # Get the user account details
-        user = get_user_by_username(username)
+        user = get_useraccount(username=username)
         if user is None:
             return Response({"detail": "User not found."}, status=404)
         serializer = self.OutputSerializer(user)

@@ -1,7 +1,10 @@
 from django.db import transaction
 from apps.account.models import UserAccount
 from apps.doctor.models import Doctor, Speciality
-from apps.utils import update_object
+from apps.utils import update_object, delete_object
+
+
+# == DOCTOR PROFILE ==
 
 
 @transaction.atomic
@@ -29,6 +32,17 @@ def update_doctor_profile(doctor: Doctor, data) -> Doctor:
 
 
 @transaction.atomic
+def delete_doctor_profile(doctor: Doctor) -> None:
+    """
+    Deletes the doctor profile
+    """
+    delete_object(doctor)
+
+
+# == SPECIALITY ==
+
+
+@transaction.atomic
 def create_speciality(name: str, description: str) -> Speciality:
     speciality = Speciality(name=name, description=description)
 
@@ -44,3 +58,10 @@ def update_speciality(speciality: Speciality, data) -> Speciality:
     speciality = update_object(speciality, data)
 
     return speciality
+
+
+def delete_speciality(speciality: Speciality) -> None:
+    """
+    Deletes the speciality
+    """
+    delete_object(speciality)

@@ -41,3 +41,10 @@ def update_object(instance, fields: Dict[str, Any]):
     instance.save()
 
     return instance
+
+
+def delete_object(instance):
+    """
+    Delete the object from the database.
+    """
+    instance.delete()

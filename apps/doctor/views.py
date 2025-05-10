@@ -1,22 +1,29 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import serializers
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAdminUser
+from apps.account.views import UserDetailView
 from .models import Speciality
 from .services import (
     create_doctor_profile,
     update_doctor_profile,
+    delete_doctor_profile,
     create_speciality,
     update_speciality,
+    delete_speciality,
 )
 from .selectors import get_doctor_profile, get_speciality
-from .permissions import CreateDoctorPermission, UpdateDoctorPermission
+from .permissions import (
+    CreateDoctorPermission,
+    UpdateDoctorPermission,
+    DeleteDoctorPermission,
+)
 
 # Create your views here.
 
 
 class SpecialityCreateView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
 
     class InputSerializer(serializers.Serializer):
         name = serializers.CharField(max_length=30, required=True)
@@ -39,7 +46,6 @@ class SpecialityCreateView(APIView):
 
 
 class SpecialityDetailView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
 
     class OutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -56,6 +62,8 @@ class SpecialityDetailView(APIView):
 
 
 class SpecialityUpdateView(APIView):
+    permission_classes = [IsAdminUser]
+
     class InputSerializer(serializers.Serializer):
         name = serializers.CharField(max_length=30, required=False)
         description = serializers.CharField(allow_blank=True, required=False)
@@ -81,8 +89,25 @@ class SpecialityUpdateView(APIView):
         return Response(data)
 
 
+class SpecialityDeleteView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk, *args, **kwargs):
+        speciality = get_speciality(pk=pk)
+        if speciality is None:
+            return Response({"detail": "Speciality not found."}, status=404)
+        try:
+            delete_speciality(speciality)
+        except Exception as e:
+            return Response(
+                {"detail": "Speciality deletion failed.", "error": str(e)},
+                status=400,
+            )
+        return Response({"detail": "Speciality deleted."}, status=200)
+
+
 class DoctorCreateView(APIView):
-    permission_classes = [IsAuthenticated, CreateDoctorPermission]
+    permission_classes = [CreateDoctorPermission]
 
     class InputSerializer(serializers.Serializer):
         title = serializers.CharField(max_length=30, required=True)
@@ -103,14 +128,14 @@ class DoctorCreateView(APIView):
         serializer = self.InputSerializer(data=request.data)
         if serializer.is_valid():
             try:
-                create_doctor_profile(user, **serializer.validated_data)
+                doctor = create_doctor_profile(user, **serializer.validated_data)
             except Exception as e:
                 return Response(
                     {"detail": "Doctor profile creation failed.", "error": str(e)},
                     status=400,
                 )
 
-            data = DoctorDetailView.OutputSerializer(user.doctor).data
+            data = DoctorDetailView.OutputSerializer(doctor).data
             return Response(data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -118,6 +143,7 @@ class DoctorCreateView(APIView):
 class DoctorDetailView(APIView):
     class OutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
+        user = UserDetailView.OutputSerializer()
         title = serializers.CharField()
         bio = serializers.CharField()
         phone = serializers.CharField()
@@ -167,3 +193,22 @@ class DoctorUpdateView(APIView):
 
         data = DoctorDetailView.OutputSerializer(updated_doctor).data
         return Response(data)
+
+
+class DoctorDeleteView(APIView):
+    permission_classes = [DeleteDoctorPermission]
+
+    def post(self, request, pk, *args, **kwargs):
+        doctor = get_doctor_profile(pk=pk)
+        if doctor is None:
+            return Response({"detail": "Doctor profile not found."}, status=404)
+        # Only the owner or admin can delete the doctor pro
+        self.check_object_permissions(self.request, doctor)
+        try:
+            delete_doctor_profile(doctor)
+        except Exception as e:
+            return Response(
+                {"detail": "Doctor profile deletion failed.", "error": str(e)},
+                status=400,
+            )
+        return Response({"detail": "Doctor profile deleted."}, status=200)
