@@ -10,7 +10,7 @@ from .services import (
     update_speciality,
 )
 from .selectors import get_doctor_profile, get_speciality
-from .permissions import CreateDoctorPermission
+from .permissions import CreateDoctorPermission, UpdateDoctorPermission
 
 # Create your views here.
 
@@ -133,6 +133,8 @@ class DoctorDetailView(APIView):
 
 
 class DoctorUpdateView(APIView):
+    permission_classes = [UpdateDoctorPermission]
+
     class InputSerializer(serializers.Serializer):
         title = serializers.CharField(max_length=30, required=False)
         bio = serializers.CharField(allow_blank=True, required=False)
@@ -153,7 +155,8 @@ class DoctorUpdateView(APIView):
         doctor = get_doctor_profile(pk=pk)
         if doctor is None:
             return Response({"detail": "Doctor profile not found."}, status=404)
-
+        # Only the owner or admin can update the doctor profile
+        self.check_object_permissions(self.request, doctor)
         try:
             updated_doctor = update_doctor_profile(doctor, serializer.validated_data)
         except Exception as e:
