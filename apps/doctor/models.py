@@ -1,9 +1,10 @@
 from django.db import models
+from apps.models import TimestampedModel
 
 # Create your models here.
 
 
-class Doctor(models.Model):
+class Doctor(TimestampedModel):
     user = models.OneToOneField(
         "account.UserAccount",
         blank=True,
@@ -42,7 +43,7 @@ class Doctor(models.Model):
         return f"{self.title} {self.user.last_name}"
 
 
-class Speciality(models.Model):
+class Speciality(TimestampedModel):
     name = models.CharField(
         max_length=100,
     )
