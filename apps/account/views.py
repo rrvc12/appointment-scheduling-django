@@ -78,7 +78,7 @@ class UserDetailView(APIView):
     """
 
     class OutputSerializer(serializers.Serializer):
-        id = serializers.UUIDField()
+        uuid = serializers.UUIDField()
         email = serializers.EmailField()
         username = serializers.CharField(max_length=150)
         first_name = serializers.CharField(max_length=30)

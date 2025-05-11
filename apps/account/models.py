@@ -58,10 +58,9 @@ class UserAccount(AbstractBaseUser, TimestampedModel, PermissionsMixin):
     Entity that can access the system
     """
 
-    id = models.UUIDField(
+    uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        primary_key=True,
     )
 
     email = models.EmailField(
